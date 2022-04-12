@@ -50,7 +50,7 @@ declare module 'pinia' {
   export interface DefineStoreOptionsBase<S extends StateTree, Store> {
     /**
      * Persist store in storage.
-     * @docs https://github.com/prazdevs/pinia-plugin-persistedstate.
+     * @docs https://github.com/ohmree/pinia-plugin-webext-storage.
      */
     persist?: boolean | PersistedStateOptions;
   }
