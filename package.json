@@ -1,13 +1,13 @@
 {
-  "name": "pinia-plugin-persistedstate",
-  "version": "1.5.1",
-  "description": "Configurable persistence and rehydration of Pinia stores.",
+  "name": "pinia-plugin-webext-storage",
+  "version": "1.0.0",
+  "description": "Persistence and rehydration of Pinia stores, backed by browser.storage.",
   "keywords": [
     "pinia-plugin"
   ],
-  "repository": "https://github.com/prazdevs/pinia-plugin-persistedstate.git",
+  "repository": "https://github.com/ohmree/pinia-plugin-webext-storage.git",
   "license": "MIT",
-  "author": "Sacha 'PraZ' Bouillez",
+  "author": "ohmree",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -16,25 +16,20 @@
   ],
   "scripts": {
     "build": "tsup src/index.ts --dts --format cjs,esm",
-    "coverage": "vue-demi-switch 3 && vitest --run --coverage",
     "lint": "eslint --ext .ts .",
     "lint:fix": "eslint --ext .ts --fix .",
     "prepare": "husky install",
     "release": "bumpp  -t -p -c \":bookmark: release v\"",
-    "size": "size-limit",
-    "test:ui": "vue-demi-switch 3 && vitest --ui",
-    "test:watch": "vue-demi-switch 3 && vitest --watch",
-    "test:2": "vue-demi-switch 2 vue2 && vitest --run index",
-    "test:3": "vue-demi-switch 3 && vitest --run",
-    "test": "pnpm run test:2 && pnpm run test:3"
+    "size": "size-limit"
   },
   "peerDependencies": {
-    "pinia": "^2.0.0"
+    "pinia": "^2.0.0",
+    "webextension-polyfill": "^0.9.0"
   },
   "devDependencies": {
     "@prazdevs/eslint-config-typescript": "^3.1.0",
     "@size-limit/preset-small-lib": "^7.0.8",
-    "@vitest/ui": "^0.9.2",
+    "@types/webextension-polyfill": "^0.8.3",
     "@vue/composition-api": "^1.4.9",
     "bumpp": "^7.1.1",
     "c8": "^7.11.0",
@@ -49,8 +44,6 @@
     "size-limit": "^7.0.8",
     "tsup": "^5.12.4",
     "typescript": "^4.6.3",
-    "vite": "^2.9.1",
-    "vitest": "^0.9.2",
     "vue": "^3.2.31",
     "vue-demi": "^0.12.5",
     "vue2": "npm:vue@^2.6.14"
@@ -58,7 +51,7 @@
   "size-limit": [
     {
       "path": "dist/index.js",
-      "limit": "1 kB"
+      "limit": "1.5 kB"
     }
   ],
   "lint-staged": {

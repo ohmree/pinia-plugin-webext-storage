@@ -1,73 +1,50 @@
+import * as browser from 'webextension-polyfill';
+
 import type {
   PiniaPluginContext,
   StateTree,
   SubscriptionCallbackMutation,
-} from 'pinia'
+} from 'pinia';
 
-import pick from './pick'
-
-export type StorageLike = Pick<Storage, 'getItem' | 'setItem'>
-
-export interface Serializer {
-  /**
-   * Serializes state into string before storing
-   * @default JSON.stringify
-   */
-  serialize: (value: StateTree) => string
-
-  /**
-   * Deserializes string into state before hydrating
-   * @default JSON.parse
-   */
-  deserialize: (value: string) => StateTree
-}
+import pick from './pick';
+import { createBrowserStorage } from './utils';
 
 export interface PersistedStateOptions {
   /**
    * Storage key to use.
    * @default $store.id
    */
-  key?: string
+  key?: string;
 
   /**
    * Where to store persisted state.
-   * @default localStorage
+   * @default 'local'
    */
-  storage?: StorageLike
+  storageType?: 'local' | 'sync' | 'managed';
 
   /**
    * Dot-notation paths to partially save state.
    * @default undefined
    */
-  paths?: Array<string>
-
-  /**
-   * Serializer to use
-   */
-  serializer?: Serializer
+  paths?: Array<string>;
 
   /**
    * Hook called before state is hydrated from storage.
    * @default undefined
    */
-  beforeRestore?: (context: PiniaPluginContext) => void
+  beforeRestore?: (context: PiniaPluginContext) => void;
 
   /**
    * Hook called after state is hydrated from storage.
    * @default undefined
    */
-  afterRestore?: (context: PiniaPluginContext) => void
+  afterRestore?: (context: PiniaPluginContext) => void;
 }
 
 export type PersistedStateFactoryOptions = Pick<
   PersistedStateOptions,
-  'storage' | 'serializer' | 'afterRestore' | 'beforeRestore'
->
-
-export type PersistedStateNuxtFactoryOptions = Omit<
-  PersistedStateFactoryOptions,
-  'storage'
->
+  'storageType' | 'afterRestore' | 'beforeRestore'
+>;
 
 declare module 'pinia' {
   export interface DefineStoreOptionsBase<S extends StateTree, Store> {
@@ -75,89 +52,75 @@ declare module 'pinia' {
      * Persist store in storage.
      * @docs https://github.com/prazdevs/pinia-plugin-persistedstate.
      */
-    persist?: boolean | PersistedStateOptions
+    persist?: boolean | PersistedStateOptions;
   }
 }
 
-export function createPersistedState(
+export function createWebextStorage(
   factoryOptions: PersistedStateFactoryOptions = {},
 ) {
-  return function (context: PiniaPluginContext): void {
+  return async function (context: PiniaPluginContext): Promise<void> {
     const {
       options: { persist },
       store,
-    } = context
+    } = context;
 
-    if (!persist) return
+    if (!persist) {
+      return;
+    }
 
     const {
-      storage = factoryOptions.storage ?? localStorage,
+      storageType = factoryOptions.storageType ?? 'local',
       beforeRestore = factoryOptions.beforeRestore ?? null,
       afterRestore = factoryOptions.afterRestore ?? null,
-      serializer = factoryOptions.serializer ?? {
-        serialize: JSON.stringify,
-        deserialize: JSON.parse,
-      },
       key = store.$id,
       paths = null,
-    } = typeof persist != 'boolean' ? persist : {}
+    } = typeof persist != 'boolean' ? persist : {};
 
-    beforeRestore?.(context)
+    const storage = createBrowserStorage(storageType);
+    beforeRestore?.(context);
 
     try {
-      const fromStorage = storage.getItem(key)
-      if (fromStorage) store.$patch(serializer.deserialize(fromStorage))
+      const fromStorage = await storage.getItem(key);
+      if (fromStorage) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        store.$patch(fromStorage as any);
+      }
     } catch (_error) {}
 
-    afterRestore?.(context)
+    afterRestore?.(context);
+    function onChanged(
+      changes: Record<string, browser.Storage.StorageChange>,
+      areaName: string,
+    ) {
+      if (areaName !== storageType || !Object.hasOwn(changes, key)) {
+        return;
+      }
+
+      store.$patch(changes[key].newValue);
+    }
+    browser.storage.onChanged.addListener(onChanged);
 
     store.$subscribe(
-      (
+      async (
         _mutation: SubscriptionCallbackMutation<StateTree>,
         state: StateTree,
       ) => {
         try {
-          const toStore = Array.isArray(paths) ? pick(state, paths) : state
-
-          storage.setItem(key, serializer.serialize(toStore as StateTree))
+          const toStore = Array.isArray(paths) ? pick(state, paths) : state;
+          browser.storage.onChanged.removeListener(onChanged);
+          await storage.setItem(key, { ...toStore });
+          browser.storage.onChanged.addListener(onChanged);
         } catch (_error) {}
       },
       { detached: true },
-    )
-  }
+    );
+    const originalDispose = store.$dispose;
+    store.$dispose = () => {
+      browser.storage.onChanged.removeListener(onChanged);
+      originalDispose();
+    };
+  };
 }
 
-interface CookieOptions<T> {
-  decode: (value: string) => T
-  encode: (value: T) => string
-  [key: string]: unknown
-}
-
-interface CookieRef<T> {
-  value: T
-}
-
-export function createNuxtPersistedState(
-  useCookie: <T>(key: string, opts: CookieOptions<T>) => CookieRef<T>,
-  factoryOptions?: PersistedStateNuxtFactoryOptions,
-): (context: PiniaPluginContext) => void {
-  return createPersistedState({
-    storage: {
-      getItem: key => {
-        return useCookie(key, {
-          encode: x => x as string,
-          decode: x => x,
-        }).value as string
-      },
-      setItem: (key, value) => {
-        useCookie(key, {
-          encode: x => x as string,
-          decode: x => x,
-        }).value = value
-      },
-    },
-    ...factoryOptions,
-  })
-}
-
-export default createPersistedState()
+export default createWebextStorage();
