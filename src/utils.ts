@@ -1,5 +1,7 @@
 import { storage } from 'webextension-polyfill';
 
+import type { StateTree } from 'pinia';
+
 export interface StorageLike<T = unknown> {
   getItem(key: string): Promise<T>;
   setItem(key: string, value: T): Promise<void>;
@@ -9,7 +11,7 @@ export interface StorageLike<T = unknown> {
   // removeListener(key: string, listener: (newValue: T) => void): void;
 }
 
-export function createBrowserStorage<T = unknown>(
+export function createBrowserStorage<T extends StateTree = StateTree>(
   storageType: 'local' | 'sync' | 'managed',
 ): StorageLike<T> {
   const storageArea = storage[storageType];

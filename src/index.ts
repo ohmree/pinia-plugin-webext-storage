@@ -82,9 +82,9 @@ export function createWebextStorage(
 
     try {
       const fromStorage = await storage.getItem(key);
-      if (fromStorage) {
+      if (fromStorage != null) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        store.$patch(fromStorage as any);
+        store.$patch(fromStorage);
       }
     } catch (_error) {}
 
@@ -109,7 +109,8 @@ export function createWebextStorage(
         try {
           const toStore = Array.isArray(paths) ? pick(state, paths) : state;
           browser.storage.onChanged.removeListener(onChanged);
-          await storage.setItem(key, { ...toStore });
+          // HACK: we might want to find a better way of deeply unwrapping a reactive object.
+          await storage.setItem(key, JSON.parse(JSON.stringify(toStore)));
           browser.storage.onChanged.addListener(onChanged);
         } catch (_error) {}
       },
