@@ -1,6 +1,6 @@
 {
   "name": "pinia-plugin-webext-storage",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "Persistence and rehydration of Pinia stores, backed by browser.storage.",
   "keywords": [
     "pinia-plugin"
@@ -30,6 +30,7 @@
   "devDependencies": {
     "@prazdevs/eslint-config-typescript": "^3.1.0",
     "@size-limit/preset-small-lib": "^7.0.8",
+    "@types/lodash.merge": "^4.6.7",
     "@types/webextension-polyfill": "^0.8.3",
     "@vue/composition-api": "^1.4.9",
     "bumpp": "^7.1.1",
@@ -60,5 +61,8 @@
   },
   "volta": {
     "node": "16.13.1"
+  },
+  "dependencies": {
+    "lodash.merge": "^4.6.2"
   }
 }

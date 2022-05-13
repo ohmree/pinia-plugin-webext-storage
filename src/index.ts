@@ -1,8 +1,8 @@
+import merge from 'lodash.merge';
 import * as browser from 'webextension-polyfill';
 
 import type { PiniaPluginContext, StateTree } from 'pinia';
 
-import pick from './pick';
 import { createBrowserStorage } from './utils';
 
 export interface PersistedStateOptions {
@@ -17,12 +17,6 @@ export interface PersistedStateOptions {
    * @default 'local'
    */
   storageType?: 'local' | 'sync' | 'managed';
-
-  /**
-   * Dot-notation paths to partially save state.
-   * @default undefined
-   */
-  paths?: Array<string>;
 
   /**
    * Hook called before state is hydrated from storage.
@@ -79,7 +73,6 @@ export function createWebextStorage(
       beforeRestore = factoryOptions.beforeRestore ?? null,
       afterRestore = factoryOptions.afterRestore ?? null,
       key = store.$id,
-      paths = null,
     } = typeof persist != 'boolean' ? persist : {};
 
     const storage = createBrowserStorage(storageType);
@@ -107,9 +100,8 @@ export function createWebextStorage(
 
     store.$save = async () => {
       try {
-        const toStore = Array.isArray(paths)
-          ? pick(store.$state, paths)
-          : store.$state;
+        const toStore = store.$state;
+        merge(toStore, await storage.getItem(key));
         browser.storage.onChanged.removeListener(onChanged);
         // HACK: we might want to find a better way of deeply unwrapping a reactive object.
         await storage.setItem(key, JSON.parse(JSON.stringify(toStore)));
