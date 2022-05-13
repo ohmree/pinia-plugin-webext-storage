@@ -52,6 +52,7 @@ declare module 'pinia' {
      * Syncing in the other direction is performed automatically.
      */
     $save(): Promise<void>;
+    $ready: boolean;
   }
 }
 
@@ -63,6 +64,8 @@ export function createWebextStorage(
       options: { persist },
       store,
     } = context;
+
+    store.$ready = false;
 
     if (!persist) {
       return;
@@ -83,6 +86,7 @@ export function createWebextStorage(
       if (fromStorage != null) {
         store.$patch(fromStorage);
       }
+      store.$ready = true;
     } catch (_error) {}
 
     afterRestore?.(context);
