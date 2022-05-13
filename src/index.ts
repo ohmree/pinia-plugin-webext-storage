@@ -100,11 +100,11 @@ export function createWebextStorage(
 
     store.$save = async () => {
       try {
-        const toStore = store.$state;
+        const toStore = JSON.parse(JSON.stringify(store.$state));
         merge(toStore, await storage.getItem(key));
         browser.storage.onChanged.removeListener(onChanged);
         // HACK: we might want to find a better way of deeply unwrapping a reactive object.
-        await storage.setItem(key, JSON.parse(JSON.stringify(toStore)));
+        await storage.setItem(key, toStore);
         browser.storage.onChanged.addListener(onChanged);
       } catch (_error) {}
     };
