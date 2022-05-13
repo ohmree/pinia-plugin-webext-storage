@@ -106,7 +106,7 @@ export const useStore = defineStore('main', {
 });
 ```
 
-The config above will only persist the `nested.data` property in `sessionStorage` under `store-key`.
+The config above will only persist the `nested.data` property in `browser.storage.sync` under `store-key`.
 
 It will also execute the `beforeRestore` and `afterRestore` hooks respectively _before_ and _after_ hydration.
 

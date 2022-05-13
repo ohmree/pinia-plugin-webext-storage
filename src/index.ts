@@ -1,10 +1,6 @@
 import * as browser from 'webextension-polyfill';
 
-import type {
-  PiniaPluginContext,
-  StateTree,
-  SubscriptionCallbackMutation,
-} from 'pinia';
+import type { PiniaPluginContext, StateTree } from 'pinia';
 
 import pick from './pick';
 import { createBrowserStorage } from './utils';
@@ -54,6 +50,15 @@ declare module 'pinia' {
      */
     persist?: boolean | PersistedStateOptions;
   }
+
+  export interface PiniaCustomProperties {
+    /**
+     * Save the store to `browser.storage`.
+     * NOTE: this is the only way to perform Pinia -> `browser.storage` sync.
+     * Syncing in the other direction is performed automatically.
+     */
+    $save(): Promise<void>;
+  }
 }
 
 export function createWebextStorage(
@@ -83,7 +88,6 @@ export function createWebextStorage(
     try {
       const fromStorage = await storage.getItem(key);
       if (fromStorage != null) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         store.$patch(fromStorage);
       }
     } catch (_error) {}
@@ -101,21 +105,18 @@ export function createWebextStorage(
     }
     browser.storage.onChanged.addListener(onChanged);
 
-    store.$subscribe(
-      async (
-        _mutation: SubscriptionCallbackMutation<StateTree>,
-        state: StateTree,
-      ) => {
-        try {
-          const toStore = Array.isArray(paths) ? pick(state, paths) : state;
-          browser.storage.onChanged.removeListener(onChanged);
-          // HACK: we might want to find a better way of deeply unwrapping a reactive object.
-          await storage.setItem(key, JSON.parse(JSON.stringify(toStore)));
-          browser.storage.onChanged.addListener(onChanged);
-        } catch (_error) {}
-      },
-      { detached: true },
-    );
+    store.$save = async () => {
+      try {
+        const toStore = Array.isArray(paths)
+          ? pick(store.$state, paths)
+          : store.$state;
+        browser.storage.onChanged.removeListener(onChanged);
+        // HACK: we might want to find a better way of deeply unwrapping a reactive object.
+        await storage.setItem(key, JSON.parse(JSON.stringify(toStore)));
+        browser.storage.onChanged.addListener(onChanged);
+      } catch (_error) {}
+    };
+
     const originalDispose = store.$dispose;
     store.$dispose = () => {
       browser.storage.onChanged.removeListener(onChanged);
