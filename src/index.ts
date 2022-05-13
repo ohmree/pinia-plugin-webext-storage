@@ -117,4 +117,6 @@ export function createWebextStorage(
   };
 }
 
-export default createWebextStorage();
+export default function (context: PiniaPluginContext): void {
+  createWebextStorage()(context);
+}
