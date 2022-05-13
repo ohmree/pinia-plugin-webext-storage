@@ -1,6 +1,6 @@
 {
   "name": "pinia-plugin-webext-storage",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Persistence and rehydration of Pinia stores, backed by browser.storage.",
   "keywords": [
     "pinia-plugin"
