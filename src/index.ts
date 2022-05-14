@@ -1,7 +1,8 @@
 import merge from 'lodash.merge';
+import { Ref, ref } from 'vue-demi';
 import * as browser from 'webextension-polyfill';
 
-import type { PiniaPluginContext, StateTree } from 'pinia';
+import type { PiniaPlugin, PiniaPluginContext } from 'pinia';
 
 import { createBrowserStorage } from './utils';
 
@@ -52,24 +53,24 @@ declare module 'pinia' {
      * Syncing in the other direction is performed automatically.
      */
     $save(): Promise<void>;
-    $ready: boolean;
+    readonly $ready: Ref<boolean>;
   }
 }
 
 export function createWebextStorage(
   factoryOptions: PersistedStateFactoryOptions = {},
-) {
-  return async function (context: PiniaPluginContext): Promise<void> {
+): PiniaPlugin {
+  const plugin: PiniaPlugin = (context) => {
     const {
       options: { persist },
       store,
     } = context;
 
-    store.$ready = false;
-
     if (!persist) {
-      return;
+      return {};
     }
+
+    const $ready = ref(false);
 
     const {
       storageType = factoryOptions.storageType ?? 'local',
@@ -81,15 +82,17 @@ export function createWebextStorage(
     const storage = createBrowserStorage(storageType);
     beforeRestore?.(context);
 
-    try {
-      const fromStorage = await storage.getItem(key);
-      if (fromStorage != null) {
-        store.$patch(fromStorage);
-      }
-      store.$ready = true;
-    } catch (_error) {}
+    (async () => {
+      try {
+        const fromStorage = await storage.getItem(key);
+        if (fromStorage != null) {
+          store.$patch(fromStorage);
+        }
+        $ready.value = true;
+        afterRestore?.(context);
+      } catch (_error) {}
+    })();
 
-    afterRestore?.(context);
     function onChanged(
       changes: Record<string, browser.Storage.StorageChange>,
       areaName: string,
@@ -102,7 +105,7 @@ export function createWebextStorage(
     }
     browser.storage.onChanged.addListener(onChanged);
 
-    store.$save = async () => {
+    const $save = async () => {
       try {
         const toStore = JSON.parse(JSON.stringify(store.$state));
         merge(toStore, await storage.getItem(key));
@@ -113,14 +116,13 @@ export function createWebextStorage(
       } catch (_error) {}
     };
 
-    const originalDispose = store.$dispose;
-    store.$dispose = () => {
+    const $dispose = () => {
       browser.storage.onChanged.removeListener(onChanged);
-      originalDispose();
+      store.$dispose();
     };
+    return { $save, $dispose, $ready };
   };
+  return plugin;
 }
 
-export default function (context: PiniaPluginContext): void {
-  createWebextStorage()(context);
-}
+export default createWebextStorage();

@@ -15,7 +15,7 @@ specifiers:
   husky: ^7.0.4
   lint-staged: ^12.3.7
   lodash.merge: ^4.6.2
-  pinia: ^2.0.13
+  pinia: ^2.0.14
   prettier: ^2.6.2
   size-limit: ^7.0.8
   tsup: ^5.12.4
@@ -41,7 +41,7 @@ devDependencies:
   happy-dom: 2.55.0
   husky: 7.0.4
   lint-staged: 12.3.7
-  pinia: 2.0.13_732a8fbf1271565c851361d5ded377fd
+  pinia: 2.0.14_732a8fbf1271565c851361d5ded377fd
   prettier: 2.6.2
   size-limit: 7.0.8
   tsup: 5.12.4_typescript@4.6.3
@@ -2769,8 +2769,8 @@ packages:
     hasBin: true
     dev: true
 
-  /pinia/2.0.13_732a8fbf1271565c851361d5ded377fd:
-    resolution: {integrity: sha512-B7rSqm1xNpwcPMnqns8/gVBfbbi7lWTByzS6aPZ4JOXSJD4Y531rZHDCoYWBwLyHY/8hWnXljgiXp6rRyrofcw==}
+  /pinia/2.0.14_732a8fbf1271565c851361d5ded377fd:
+    resolution: {integrity: sha512-0nPuZR4TetT/WcLN+feMSjWJku3SQU7dBbXC6uw+R6FLQJCsg+/0pzXyD82T1FmAYe0lsx+jnEDQ1BLgkRKlxA==}
     peerDependencies:
       '@vue/composition-api': ^1.4.0
       typescript: '>=4.4.4'
